@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Speed Forecast Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { background-color: #f0f2f5; }
+        #loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column;
+        }
+        .stats-card { border-radius: 12px; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .table-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 30px; }
+        .table-responsive { max-height: 500px; overflow-y: auto; }
+        .sticky-thead th { position: sticky; top: 0; background: #343a40; color: white; z-index: 10; }
+    </style>
+</head>
+<body>
+
+<div id="loader-overlay">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+    <h5 class="mt-3 fw-bold">Processing JSON Data...</h5>
+</div>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded shadow-sm">
+        <div>
+            <h3 class="fw-bold m-0 text-primary">Station Forecast</h3>
+            <span id="file-name" class="text-muted">No data loaded</span>
+        </div>
+        <div class="btn-group">
+            <input id="file" type="file" accept=".csv, .xlsx, .xls" class="d-none" />
+            <button class="btn btn-primary btn-lg px-4" id="upload">UPLOAD FILE</button>
+            <button class="btn btn-outline-danger" id="clear">RESET</button>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-bottom border-primary border-4">
+                <div class="text-muted small fw-bold text-primary">TOTAL FILTERED PARCELS</div>
+                <h2 id="count-total" class="m-0">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-bottom border-success border-4">
+                <div class="text-muted small fw-bold text-success">RECEIVED (TAL)</div>
+                <h2 id="count-received" class="m-0">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-bottom border-warning border-4">
+                <div class="text-muted small fw-bold text-warning">IN TRANSIT (SOC4)</div>
+                <h2 id="count-transporting" class="m-0">0</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-bottom border-info border-4">
+                <div class="text-muted small fw-bold text-info">ARRIVED (SOC4)</div>
+                <h2 id="count-transported" class="m-0">0</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-uppercase text-success m-0">Table 1: LMHub_Received (Talavera Hub)</h6>
+            <span class="badge bg-success" id="row-count-1">0 Rows</span>
+        </div>
+        <div class="table-responsive">
+            <table id="table-received" class="table table-hover">
+                <thead class="sticky-thead"><tr><th>Order ID</th><th>Town</th><th>Current Station</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-uppercase text-warning m-0">Table 2: SOC_LHTransporting (SOC 4)</h6>
+            <span class="badge bg-warning text-dark" id="row-count-2">0 Rows</span>
+        </div>
+        <div class="table-responsive">
+            <table id="table-transporting" class="table table-hover">
+                <thead class="sticky-thead"><tr><th>Order ID</th><th>Town</th><th>Current Station</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-uppercase text-info m-0">Table 3: SOC_LHTransported (SOC 4)</h6>
+            <span class="badge bg-info text-dark" id="row-count-3">0 Rows</span>
+        </div>
+        <div class="table-responsive">
+            <table id="table-transported" class="table table-hover">
+                <thead class="sticky-thead"><tr><th>Order ID</th><th>Town</th><th>Current Station</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+$(function () {
+    let cachedData = [];
+
+    $("#upload").on("click", function() { $("#file").click(); });
+    $("#clear").on("click", function() { location.reload(); });
+
+    $("#file").on("change", function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        $("#loader-overlay").css("display", "flex");
+        $("#file-name").text(file.name);
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            setTimeout(() => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: "array", raw: true });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rawJson = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+                    cachedData = rawJson.map(r => {
+                        let row = {};
+                        for (let k in r) { row[k.toLowerCase().trim()] = r[k]; }
+                        return {
+                            oid: row["order id"] || "",
+                            town: row["town name"] || "",
+                            stat: row["status"] || "",
+                            curr: String(row["current station"] || "").trim(),
+                            dest: String(row["destination station"] || "").trim()
+                        };
+                    });
+
+                    renderDashboard();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error processing file.");
+                } finally {
+                    $("#loader-overlay").hide();
+                }
+            }, 100);
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function renderDashboard() {
+        const isTal = (s) => s.toLowerCase().includes("talavera");
+        const isSoc4 = (s) => s.toLowerCase().replace(/\s/g, "") === "soc4";
+
+        const data1 = cachedData.filter(i => i.stat.includes("LMHub_Received") && isTal(i.dest) && isTal(i.curr));
+        const data2 = cachedData.filter(i => i.stat.includes("SOC_LHTransporting") && isTal(i.dest) && isSoc4(i.curr));
+        const data3 = cachedData.filter(i => i.stat.includes("SOC_LHTransported") && isTal(i.dest) && isSoc4(i.curr));
+
+        // Logic update: Total Parcel is the sum of the filtered groups
+        const totalFiltered = data1.length + data2.length + data3.length;
+
+        $("#count-total").text(totalFiltered);
+        $("#count-received").text(data1.length);
+        $("#count-transporting").text(data2.length);
+        $("#count-transported").text(data3.length);
+
+        // Update Row Counts in Table Headers
+        $("#row-count-1").text(data1.length + " Rows");
+        $("#row-count-2").text(data2.length + " Rows");
+        $("#row-count-3").text(data3.length + " Rows");
+
+        populate("#table-received tbody", data1);
+        populate("#table-transporting tbody", data2);
+        populate("#table-transported tbody", data3);
+    }
+
+    function populate(selector, list) {
+        const tbody = $(selector);
+        tbody.empty();
+        if (list.length === 0) {
+            tbody.append('<tr><td colspan="4" class="text-center text-muted py-4">No matching data</td></tr>');
+            return;
+        }
+        let html = "";
+        list.forEach(i => {
+            html += `<tr>
+                <td><small class="fw-bold">${i.oid}</small></td>
+                <td>${i.town}</td>
+                <td><span class="badge bg-light text-dark border">${i.curr}</span></td>
+                <td><span class="badge bg-secondary">${i.stat}</span></td>
+            </tr>`;
+        });
+        tbody.append(html);
+    }
+});
+</script>
+</body>
+</html>
