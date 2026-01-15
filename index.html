@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Talavera Hub | Full Ops Dashboard</title>
+    <title>Talavera Hub | Consolidated Operations</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -11,33 +11,24 @@
         :root { --primary: #0d6efd; --dark-bg: #1a1c23; --card-shadow: 0 2px 12px rgba(0,0,0,0.08); }
         body { background-color: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 0.82rem; color: #333; margin: 0; }
 
-        /* MOBILE OPTIMIZED LOADING OVERLAY */
+        /* LOADING OVERLAY MOBILE FIX */
         #loadingOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999; color: white;
-            padding: 30px; text-align: center;
+            padding: 25px; text-align: center;
         }
         #loadMsg {
-            width: 100%;
-            max-width: 320px;
-            overflow-wrap: break-word;
-            word-break: break-all;
-            font-size: 0.85rem;
-            line-height: 1.4;
-            text-transform: uppercase;
-            font-weight: 600;
-            margin-top: 10px;
+            width: 100%; max-width: 300px; overflow-wrap: break-word;
+            font-size: 0.85rem; font-weight: 600; margin-top: 12px; line-height: 1.4;
         }
         .loader { border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Header Layout */
-        .main-header { background: var(--dark-bg); color: white; padding: 1rem; top: 0; z-index: 1000; border-bottom: 3px solid var(--primary); }
+        .main-header { background: var(--dark-bg); color: white; padding: 1rem; position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--primary); }
         .header-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; width: 100%; }
         @media (min-width: 768px) { .header-controls { margin-top: 0; width: auto; } }
 
-        /* Responsive Stats */
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 1200px) { .stats-grid { grid-template-columns: repeat(6, 1fr); } }
@@ -46,24 +37,19 @@
         .stat-card b { font-size: 0.62rem; color: #6c757d; text-transform: uppercase; display: block; }
         .stat-card span { font-size: 1.3rem; font-weight: 800; display: block; }
 
-        /* Sections */
         .area-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
         @media (min-width: 992px) { .area-container { flex-direction: row; } }
 
         .town-section { background: white; border-radius: 12px; padding: 15px; flex: 1; box-shadow: var(--card-shadow); border-top: 5px solid #dee2e6; }
         .grid-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; margin-top: 10px; }
         
-        .town-item { 
-            border: 1px solid #edf2f7; border-radius: 6px; display: flex; 
-            justify-content: space-between; padding: 6px 8px; font-size: 0.72rem; background: #fafbfc;
-        }
+        .town-item { border: 1px solid #edf2f7; border-radius: 6px; display: flex; justify-content: space-between; padding: 6px 8px; font-size: 0.72rem; background: #fafbfc; }
         .town-item.hot { background: #fff1f2; color: #e11d48; font-weight: bold; border-color: #fecaca; }
 
-        /* Card & Tables */
         .table-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: var(--card-shadow); border-top: 4px solid #dee2e6; }
         .scroll-area { max-height: 350px; overflow: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
         .table { min-width: 700px; margin-bottom: 0; }
-        .table thead th { background: #2d3748; color: white; position: sticky; top: 0; font-size: 0.68rem; padding: 10px; z-index: 10; border: none; }
+        .table thead th { background: #2d3748; color: white; position: sticky; top: 0; font-size: 0.68rem; padding: 10px; z-index: 10; }
         
         .count-badge { background: var(--primary); color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: bold; }
         .search-box { border-radius: 20px; border: 1px solid #4a5568; background: #2d3748; color: white; padding: 6px 15px; flex-grow: 1; }
@@ -73,27 +59,27 @@
 
 <div id="loadingOverlay">
     <div class="loader"></div>
-    <div id="loadMsg">Preparing Data...</div>
+    <div id="loadMsg">Processing Pipeline Data...</div>
 </div>
 
 <header class="main-header">
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
-            <h6 class="fw-bold m-0 text-white">TALAVERA HUB | PIPELINE</h6>
+            <h6 class="fw-bold m-0 text-white">TALAVERA HUB</h6>
             <div class="header-controls">
-                <input type="text" id="tSearch" class="search-box" placeholder="Search towns...">
-                <button class="btn btn-primary btn-sm px-3 fw-bold" onclick="$('#file').click()">UPLOAD DATA</button>
+                <input type="text" id="tSearch" class="search-box" placeholder="Filter by town...">
+                <button class="btn btn-primary btn-sm px-3 fw-bold" onclick="$('#file').click()">UPLOAD FILES</button>
                 <input id="file" type="file" accept=".csv, .xlsx, .xls" multiple class="d-none" />
             </div>
         </div>
         
         <div class="stats-grid">
-            <div class="stat-card border-danger"><b>Total Operations</b><span id="c-ops" class="text-danger">0</span></div>
-            <div class="stat-card border-success"><b>Received</b><span id="c-rec" class="text-success">0</span></div>
-            <div class="stat-card border-warning"><b>Transporting</b><span id="c-ing" class="text-warning">0</span></div>
-            <div class="stat-card border-info"><b>Transported</b><span id="c-ed" class="text-info">0</span></div>
-            <div class="stat-card border-primary"><b>SD Area (All)</b><span id="c-sdo" class="text-primary">0</span></div>
-            <div class="stat-card border-dark"><b>TVR Area (All)</b><span id="c-tvr" class="text-dark">0</span></div>
+            <div class="stat-card border-danger"><b>Total</b><span id="c-ops" class="text-danger">0</span></div>
+            <div class="stat-card border-success"><b>LMHub_Received</b><span id="c-rec" class="text-success">0</span></div>
+            <div class="stat-card border-warning"><b>SOC_LHTransporting</b><span id="c-ing" class="text-warning">0</span></div>
+            <div class="stat-card border-info"><b>SOC_LHTransported</b><span id="c-ed" class="text-info">0</span></div>
+            <div class="stat-card border-primary"><b>SD All</b><span id="c-sdo" class="text-primary">0</span></div>
+            <div class="stat-card border-dark"><b>TALAVERA All</b><span id="c-tvr" class="text-dark">0</span></div>
         </div>
     </div>
 </header>
@@ -101,50 +87,42 @@
 <main class="container-fluid py-3">
     <div class="area-container">
         <div class="town-section" style="border-top-color: #0d6efd;">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="fw-bold text-primary">SD POOL</span>
-                <span class="count-badge" id="q-sdo-p">0</span>
-            </div>
+            <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-primary">SANTO DOMINGO</span><span class="count-badge" id="q-sdo-p">0</span></div>
             <div id="grid-sdo" class="grid-wrapper"></div>
         </div>
         <div class="town-section" style="border-top-color: #dc3545;">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="fw-bold text-danger">UPPER TVR</span>
-                <span class="count-badge bg-danger" id="q-up-p">0</span>
-            </div>
+            <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-danger">UPPER</span><span class="count-badge bg-danger" id="q-up-p">0</span></div>
             <div id="grid-up" class="grid-wrapper"></div>
         </div>
         <div class="town-section" style="border-top-color: #212529;">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="fw-bold text-dark">LOWER TVR</span>
-                <span class="count-badge bg-dark" id="q-low-p">0</span>
-            </div>
+            <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-dark">LOWER</span><span class="count-badge bg-dark" id="q-low-p">0</span></div>
             <div id="grid-low" class="grid-wrapper"></div>
         </div>
     </div>
 
+    <div class="table-card" style="border-top-color: #0d6efd;">
+        <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-primary">SANTO DOMINGO (SDO) ALL DATA</span><span id="q-sdo-t" class="count-badge">0</span></div>
+        <div class="scroll-area"><table id="t-sdo" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort Code</th><th>Status</th><th>Current Station</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="table-card" style="border-top-color: #212529;">
+        <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-dark">TALAVERA (TVR) ALL DATA</span><span id="q-tvr-t" class="count-badge bg-dark">0</span></div>
+        <div class="scroll-area"><table id="t-tvr" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort Code</th><th>Status</th><th>Current Station</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
     <div class="table-card" style="border-top-color: #198754;">
-        <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold text-success">1. LMHUB_RECEIVED</span>
-            <span id="q-rec-t" class="count-badge bg-success">0</span>
-        </div>
-        <div class="scroll-area"><table id="t-rec" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Destination</th><th>Current Station</th></tr></thead><tbody></tbody></table></div>
+        <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-success">STATUS: LMHUB_RECEIVED</span><span id="q-rec-t" class="count-badge bg-success">0</span></div>
+        <div class="scroll-area"><table id="t-rec" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Destination</th><th>Current</th></tr></thead><tbody></tbody></table></div>
     </div>
 
     <div class="table-card" style="border-top-color: #ffc107;">
-        <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold text-warning">2. SOC_TRANSPORTING</span>
-            <span id="q-ing-t" class="count-badge bg-warning">0</span>
-        </div>
-        <div class="scroll-area"><table id="t-ing" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Destination</th><th>Current Station</th></tr></thead><tbody></tbody></table></div>
+        <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-warning">STATUS: SOC_TRANSPORTING</span><span id="q-ing-t" class="count-badge bg-warning">0</span></div>
+        <div class="scroll-area"><table id="t-ing" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Destination</th><th>Current</th></tr></thead><tbody></tbody></table></div>
     </div>
 
     <div class="table-card" style="border-top-color: #0dcaf0;">
-        <div class="d-flex justify-content-between align-items-center">
-            <span class="fw-bold text-info">3. SOC_TRANSPORTED</span>
-            <span id="q-ed-t" class="count-badge bg-info">0</span>
-        </div>
-        <div class="scroll-area"><table id="t-ed" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Destination</th><th>Current Station</th></tr></thead><tbody></tbody></table></div>
+        <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-info">STATUS: SOC_TRANSPORTED</span><span id="q-ed-t" class="count-badge bg-info">0</span></div>
+        <div class="scroll-area"><table id="t-ed" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Destination</th><th>Current</th></tr></thead><tbody></tbody></table></div>
     </div>
 </main>
 
@@ -188,6 +166,7 @@ $(function () {
             combinedRaw = combinedRaw.concat(data);
         }
 
+        // Logic Filters
         const recData = combinedRaw.filter(i => i.stat.includes("LMHub_Received") && i.curr.includes(STATIONS.HUB) && i.dest.includes(STATIONS.HUB));
         const ingData = combinedRaw.filter(i => i.stat.includes("SOC_LHTransporting") && i.curr.includes(STATIONS.SOC) && i.dest.includes(STATIONS.HUB));
         const edData  = combinedRaw.filter(i => i.stat.includes("SOC_LHTransported") && i.curr.includes(STATIONS.SOC) && i.dest.includes(STATIONS.HUB));
@@ -197,7 +176,7 @@ $(function () {
         const tvrPool = opsPool.filter(i => i.sort.includes("-TVR-") && !i.sort.includes("-SDO-"));
 
         const renderTbl = (id, list) => {
-            const html = list.map(i => `<tr><td>${i.oid}</td><td>${i.town}</td><td>${i.sort}</td><td>${i.dest}</td><td>${i.curr}</td></tr>`).join('');
+            const html = list.map(i => `<tr><td>${i.oid}</td><td>${i.town}</td><td>${i.sort}</td><td>${i.stat}</td><td>${i.curr}</td></tr>`).join('');
             $(id).find('tbody').html(html || '<tr><td colspan="5" class="text-center py-3">No data loaded</td></tr>');
         };
 
@@ -209,6 +188,8 @@ $(function () {
             $(id).html(sorted.map(t => `<div class="town-item ${counts[t] > 50 ? 'hot' : ''}" data-town="${t}"><span>${t}</span><b>${counts[t]}</b></div>`).join(''));
         };
 
+        renderTbl("#t-sdo", sdoPool);
+        renderTbl("#t-tvr", tvrPool);
         renderTbl("#t-rec", recData);
         renderTbl("#t-ing", ingData);
         renderTbl("#t-ed", edData);
@@ -225,7 +206,9 @@ $(function () {
         $("#c-ed").text(edData.length.toLocaleString());
         $("#q-ed-t").text(edData.length.toLocaleString());
         $("#c-sdo").text(sdoPool.length.toLocaleString());
+        $("#q-sdo-t").text(sdoPool.length.toLocaleString());
         $("#c-tvr").text(tvrPool.length.toLocaleString());
+        $("#q-tvr-t").text(tvrPool.length.toLocaleString());
 
         $("#loadingOverlay").fadeOut();
         $("#file").val('');
