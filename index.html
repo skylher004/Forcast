@@ -3,255 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forecast</title>
+    <title>Talavera Hub | Responsive Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; font-size: 0.8rem; }
-        .main-header { background: #1a1c23; color: white; padding: 15px; top: 0; z-index: 1000; }
-        
+        :root { --primary: #0d6efd; --dark-bg: #1a1c23; --card-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 0.85rem; color: #333; margin: 0; }
+
+        /* FIXED LOADING OVERLAY FOR MOBILE */
         #loadingOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8); display: none; flex-direction: column;
+            background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999; color: white;
+            padding: 20px; text-align: center;
         }
-        .loader {
-            border: 5px solid #f3f3f3; border-top: 5px solid #0d6efd;
-            border-radius: 50%; width: 50px; height: 50px;
-            animation: spin 1s linear infinite; margin-bottom: 15px;
+        #loadMsg {
+            max-width: 90%;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 12px; }
-        @media (max-width: 992px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 576px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-
-        .stat-card { background: #fff; padding: 10px; border-radius: 8px; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-bottom: 4px solid #dee2e6; }
-        .stat-card b { font-size: 0.6rem; color: #6c757d; text-transform: uppercase; display: block; }
-        .stat-card span { font-size: 1.2rem; font-weight: 800; }
-
-        /* FIXED: Town Grid Fluid Layout (Removes White Space) */
-        .town-section { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .grid-wrapper { 
-            display: flex; 
-            flex-wrap: wrap; /* Allows items to fill the whole width and wrap */
-            gap: 8px; 
+        /* Header & Navigation */
+        .main-header { background: var(--dark-bg); color: white; padding: 1rem; position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--primary); }
+        .header-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; width: 100%; }
+        @media (min-width: 768px) { 
+            .header-controls { margin-top: 0; width: auto; }
         }
+
+        /* Stats Grid - Responsive */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
+            margin-top: 15px; 
+        }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1200px) { .stats-grid { grid-template-columns: repeat(6, 1fr); } }
+
+        .stat-card { background: #fff; padding: 12px; border-radius: 10px; box-shadow: var(--card-shadow); border-bottom: 4px solid #dee2e6; }
+        .stat-card b { font-size: 0.65rem; color: #6c757d; text-transform: uppercase; display: block; }
+        .stat-card span { font-size: 1.25rem; font-weight: 800; display: block; }
+
+        /* Area Containers */
+        .area-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        @media (min-width: 992px) { .area-container { flex-direction: row; } }
+
+        .town-section { background: white; border-radius: 12px; padding: 15px; flex: 1; box-shadow: var(--card-shadow); border-top: 5px solid #dee2e6; }
+        .grid-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; margin-top: 10px; }
         
-        /* Each individual town box */
         .town-item { 
-            flex: 1 1 calc(16.66% - 8px); /* 6 columns on desktop */
-            min-width: 150px;
-            border: 1px solid #f1f5f9; 
-            border-radius: 4px; 
-            background: #fff; 
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 10px;
-            font-size: 0.72rem;
+            border: 1px solid #edf2f7; border-radius: 6px; display: flex; 
+            justify-content: space-between; padding: 6px 8px; font-size: 0.75rem; background: #fafbfc;
         }
-        @media (max-width: 1200px) { .town-item { flex: 1 1 calc(25% - 8px); } } /* 4 columns */
-        @media (max-width: 768px) { .town-item { flex: 1 1 calc(50% - 8px); } } /* 2 columns */
-
         .town-item.hot { background: #fff1f2; color: #e11d48; font-weight: bold; border-color: #fecaca; }
-        
+
         /* Tables */
-        .table-card { background: white; border-radius: 8px; padding: 12px; margin-bottom: 20px; border-top: 4px solid #0d6efd; }
-        .scroll-area { max-height: 400px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; }
-        .table thead th { background: #2d3748; color: white; position: sticky; top: 0; font-size: 0.65rem; text-transform: uppercase; z-index: 5; white-space: nowrap; }
-        .count-badge { background: #0d6efd; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; float: right; }
-        .search-box { border-radius: 20px; border: 1px solid #4a5568; background: #2d3748; color: white; padding: 5px 15px; font-size: 0.75rem; width: 100%; max-width: 250px; }
+        .table-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: var(--card-shadow); overflow: hidden; }
+        .scroll-area { max-height: 400px; overflow-x: auto; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
+        .table { min-width: 600px; margin-bottom: 0; }
+        .table thead th { background: #2d3748; color: white; position: sticky; top: 0; font-size: 0.7rem; padding: 10px; z-index: 10; }
+        
+        .count-badge { background: var(--primary); color: white; padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+        .search-box { border-radius: 20px; border: 1px solid #4a5568; background: #2d3748; color: white; padding: 6px 15px; flex-grow: 1; }
     </style>
 </head>
 <body>
 
 <div id="loadingOverlay">
     <div class="loader"></div>
-    <div class="fw-bold">PROCESSING DATA...</div>
-    <small>Pleast wait.......</small>
+    <div id="loadMsg">Consolidating Multi-File Data...</div>
 </div>
 
-<div class="main-header">
+<header class="main-header">
     <div class="container-fluid">
-        <div class="row align-items-center">
-            <div class="col-12 col-md-4 mb-2 mb-md-0">
-                <h6 class="fw-bold m-0 text-white">TALAVERA HUB | FORCAST</h6>
-            </div>
-            <div class="col-12 col-md-8 d-flex gap-2 justify-content-md-end">
-                <input type="text" id="tSearch" class="search-box" placeholder="Quick search...">
-                <input id="file" type="file" accept=".csv, .xlsx, .xls" class="d-none" />
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <h6 class="fw-bold m-0">TALAVERA HUB DASHBOARD</h6>
+            <div class="header-controls">
+                <input type="text" id="tSearch" class="search-box" placeholder="Find town...">
                 <button class="btn btn-primary btn-sm px-3 fw-bold" onclick="$('#file').click()">UPLOAD</button>
+                <input id="file" type="file" accept=".csv, .xlsx, .xls" multiple class="d-none" />
             </div>
         </div>
+        
         <div class="stats-grid">
-           <div class="stat-card border-danger"><b>Total</b><span id="c-ops" class="text-danger">0</span></div>
-            <div class="stat-card border-success"><b>LMHub_Received</b><span id="c-rec">0</span></div>
-            <div class="stat-card border-warning"><b>Soc_LHTransporting</b><span id="c-ing">0</span></div>
-            <div class="stat-card border-info"><b>SOC_LHTransported</b><span id="c-ed">0</span></div>
-             <div class="stat-card border-primary"><b>SD Area</b><span id="c-sdo">0</span></div>
-            <div class="stat-card border-dark"><b>TALAVERA Area</b><span id="c-tvr">0</span></div>
-     
-            
+            <div class="stat-card border-danger"><b>Total Ops</b><span id="c-ops" class="text-danger">0</span></div>
+            <div class="stat-card border-success"><b>Received</b><span id="c-rec" class="text-success">0</span></div>
+            <div class="stat-card border-warning"><b>Transporting</b><span id="c-ing" class="text-warning">0</span></div>
+            <div class="stat-card border-info"><b>Transported</b><span id="c-ed" class="text-info">0</span></div>
+            <div class="stat-card border-primary"><b>SD Area</b><span id="c-sdo" class="text-primary">0</span></div>
+            <div class="stat-card border-dark"><b>TVR Area</b><span id="c-tvr" class="text-dark">0</span></div>
         </div>
     </div>
-</div>
+</header>
 
-<div class="container-fluid py-3"> 
-<div class="d-flex justify-content-between">
-    <div class="town-section">
-        <div class="fw-bold text-primary mb-2">SANTO DOMINGO<span class="badge bg-primary" id="q-sdo-p">0</span></div>
-        <div id="grid-sdo" class="grid-wrapper"></div>
+<main class="container-fluid py-3">
+    <div class="area-container">
+        <div class="town-section" style="border-top-color: #0d6efd;">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-primary">SD POOL</span>
+                <span class="count-badge" id="q-sdo-p">0</span>
+            </div>
+            <div id="grid-sdo" class="grid-wrapper"></div>
+        </div>
+        <div class="town-section" style="border-top-color: #dc3545;">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-danger">UPPER TVR</span>
+                <span class="count-badge bg-danger" id="q-up-p">0</span>
+            </div>
+            <div id="grid-up" class="grid-wrapper"></div>
+        </div>
+        <div class="town-section" style="border-top-color: #212529;">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dark">LOWER TVR</span>
+                <span class="count-badge bg-dark" id="q-low-p">0</span>
+            </div>
+            <div id="grid-low" class="grid-wrapper"></div>
+        </div>
     </div>
 
-    <div class="town-section">
-        <div class="fw-bold text-danger mb-2">UPPER <span class="badge bg-danger" id="q-up-p">0</span></div>
-        <div id="grid-up" class="grid-wrapper"></div>
+    <div class="table-card" style="border-top-color: #0d6efd;">
+        <div class="d-flex justify-content-between">
+            <span class="fw-bold text-primary">SD AREA (ALL)</span>
+            <span id="q-sdo-t" class="count-badge">0</span>
+        </div>
+        <div class="scroll-area"><table id="t-sdo" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Status</th><th>Station</th></tr></thead><tbody></tbody></table></div>
     </div>
 
-    <div class="town-section">
-        <div class="fw-bold text-dark mb-2">LOWER <span class="badge bg-dark" id="q-low-p">0</span></div>
-        <div id="grid-low" class="grid-wrapper"></div>
+    <div class="table-card" style="border-top-color: #212529;">
+        <div class="d-flex justify-content-between">
+            <span class="fw-bold text-dark">TALAVERA AREA (ALL)</span>
+            <span id="q-tvr-t" class="count-badge bg-dark">0</span>
+        </div>
+        <div class="scroll-area"><table id="t-tvr" class="table table-sm table-hover"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Status</th><th>Station</th></tr></thead><tbody></tbody></table></div>
     </div>
-</div>
-
-    <div class="table-card" style="border-color: #198754;">
-        <div class="fw-bold text-success">LMHUB_RECEIVED <span id="q-rec-t" class="count-badge">0</span></div>
-        <div class="scroll-area"><table id="t-rec" class="table table-sm table-hover table-bordered"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Station</th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div class="table-card" style="border-color: #ffc107;">
-        <div class="fw-bold text-warning">SOC_TRANSPORTING <span id="q-ing-t" class="count-badge">0</span></div>
-        <div class="scroll-area"><table id="t-ing" class="table table-sm table-hover table-bordered"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Station</th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div class="table-card" style="border-color: #0dcaf0;">
-        <div class="fw-bold text-info">SOC_TRANSPORTED <span id="q-ed-t" class="count-badge">0</span></div>
-        <div class="scroll-area"><table id="t-ed" class="table table-sm table-hover table-bordered"><thead><tr><th>Order ID</th><th>Town</th><th>Sort</th><th>Station</th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div class="table-card" style="border-color: #0d6efd;">
-        <div class="fw-bold text-primary">SD (ALL) <span id="q-sdo-t" class="count-badge">0</span></div>
-        <div class="scroll-area"><table id="t-sdo" class="table table-sm table-hover table-bordered"><thead><tr><th>Order ID</th><th>Town</th><th>Status</th><th>Station</th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div class="table-card" style="border-color: #212529;">
-        <div class="fw-bold text-dark">TALAVERA (ALL) <span id="q-tvr-t" class="count-badge">0</span></div>
-        <div class="scroll-area"><table id="t-tvr" class="table table-sm table-hover table-bordered"><thead><tr><th>Order ID</th><th>Town</th><th>Status</th><th>Station</th></tr></thead><tbody></tbody></table></div>
-    </div>
-</div>
+</main>
 
 <script>
 $(function () {
-    const UPPER_KEY = [
-        "MABUHAY", "COLLADO", "CABUBULAONAN", "BANTUG HACIENDA",
-        "SAN PASCUAL", "BAGONG SILANG", "LOMBOY", "SICSICAN MATANDA",
-        "TABACAO", "CASULUCAN ESTE", "TAGAYTAY", "BULAC", "PANTOC BULAC",
-        "BANTUG HAMOG", "BASANG HAMOG", "BAKAL I", "BAKAL II", "BAKAL III", "MATINGKIS"
-    ];
+    const STATIONS = { SOC: "SOC 4", HUB: "Talavera Hub" };
+    const UPPER_KEY = ["MABUHAY", "COLLADO", "CABUBULAONAN", "BANTUG HACIENDA", "SAN PASCUAL", "BAGONG SILANG", "LOMBOY", "SICSICAN MATANDA", "TABACAO", "CASULUCAN ESTE", "TAGAYTAY", "BULAC", "PANTOC BULAC", "BANTUG HAMOG", "BASANG HAMOG", "BAKAL I", "BAKAL II", "BAKAL III", "MATINGKIS"];
 
-    $("#file").on("change", function(e) {
+    const extractData = (file) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const wb = XLSX.read(data, { type: "array" });
+                const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+                resolve(json.map(r => {
+                    let row = {};
+                    for (let k in r) { row[k.toLowerCase().trim()] = r[k]; }
+                    return {
+                        oid: row["order id"] || "",
+                        sort: String(row["sort code name"] || "").toUpperCase(),
+                        town: String(row["town name"] || "UNKNOWN").toUpperCase(),
+                        stat: String(row["status"] || ""),
+                        curr: String(row["current station"] || "").trim(),
+                        dest: String(row["destination station"] || "").trim()
+                    };
+                }));
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    };
+
+    const processFiles = async (files) => {
+        if (!files.length) return;
         $("#loadingOverlay").css("display", "flex");
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, { type: "array" });
-            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        
+        let combinedRaw = [];
+        for (let f of files) {
+            $("#loadMsg").text(`Reading: ${f.name}`);
+            const data = await extractData(f);
+            combinedRaw = combinedRaw.concat(data);
+        }
 
-            const allRows = json.map(r => {
-                let row = {};
-                for (let k in r) { row[k.toLowerCase().trim()] = r[k]; }
-                return {
-                    oid: row["order id"] || "",
-                    sort: String(row["sort code name"] || "").toUpperCase(),
-                    town: String(row["town name"] || "UNKNOWN").toUpperCase(),
-                    stat: String(row["status"] || ""),
-                    curr: String(row["current station"] || ""),
-                    dest: String(row["destination station"] || "")
-                };
-            });
+        const recData = combinedRaw.filter(i => i.stat.includes("LMHub_Received") && i.curr.includes(STATIONS.HUB) && i.dest.includes(STATIONS.HUB));
+        const ingData = combinedRaw.filter(i => i.stat.includes("SOC_LHTransporting") && i.curr.includes(STATIONS.SOC) && i.dest.includes(STATIONS.HUB));
+        const edData  = combinedRaw.filter(i => i.stat.includes("SOC_LHTransported") && i.curr.includes(STATIONS.SOC) && i.dest.includes(STATIONS.HUB));
 
-            // --- 1. Filter by Status with specific Station rules ---
-            
-            // Received: Destination is Talavera AND Current is Talavera
-            const rec = allRows.filter(i => 
-                i.stat.includes("LMHub_Received") && 
-                i.dest === "Talavera Hub" && 
-                i.curr === "Talavera Hub"
-            );
+        const opsPool = [...recData, ...ingData, ...edData];
+        const sdoPool = opsPool.filter(i => i.sort.includes("-SDO-"));
+        const tvrPool = opsPool.filter(i => i.sort.includes("-TVR-") && !i.sort.includes("-SDO-"));
 
-            // Transporting: Destination is Talavera AND Current is SOC 4
-            const ing = allRows.filter(i => 
-                i.stat.includes("SOC_LHTransporting") && 
-                i.dest === "Talavera Hub" && 
-                i.curr === "SOC 4"
-            );
-
-            // Transported: Destination is Talavera AND Current is SOC 4
-            const ed = allRows.filter(i => 
-                i.stat.includes("SOC_LHTransported") && 
-                i.dest === "Talavera Hub" && 
-                i.curr === "SOC 4"
-            );
-
-            // --- 2. Filter Area Totals (All destined for Talavera) ---
-            const sdo = allRows.filter(i => i.dest === "Talavera Hub" && i.sort.includes("SDO"));
-            const tvr = allRows.filter(i => i.dest === "Talavera Hub" && !i.sort.includes("SDO"));
-
-            // --- 3. Update UI ---
-            $("#c-sdo, #q-sdo-p, #q-sdo-t").text(sdo.length); 
-            $("#c-tvr, #q-tvr-t").text(tvr.length);
-            $("#c-rec, #q-rec-t").text(rec.length); 
-            $("#c-ing, #q-ing-t").text(ing.length); 
-            $("#c-ed, #q-ed-t").text(ed.length);
-            
-            // Total Ops is the sum of these specific filtered statuses
-            $("#c-ops").text(rec.length + ing.length + ed.length);
-
-            // --- 4. Fill Tables ---
-            const fill = (id, list) => {
-                $(id).html(list.map(i => `<tr><td>${i.oid}</td><td>${i.town}</td><td>${i.sort}</td><td>${i.curr}</td></tr>`).join(''));
-            };
-            fill("#t-rec tbody", rec); 
-            fill("#t-ing tbody", ing); 
-            fill("#t-ed tbody", ed);
-            fill("#t-sdo tbody", sdo); 
-            fill("#t-tvr tbody", tvr);
-
-            // --- 5. Build Town Grids ---
-            const buildGrid = (data, containerId, badgeId) => {
-                let m = {}; 
-                data.forEach(i => m[i.town] = (m[i.town] || 0) + 1);
-                let sorted = Object.keys(m).sort((a,b) => m[b] - m[a]);
-                if(badgeId) $(badgeId).text(sorted.length + " Towns");
-                
-                let html = sorted.map(t => {
-                    let cls = m[t] > 100 ? 'town-item hot' : 'town-item';
-                    return `<div class="${cls}" data-town="${t}"><span>${t}</span><span>${m[t]}</span></div>`;
-                }).join('');
-                $(containerId).html(html);
-            };
-
-            buildGrid(sdo, "#grid-sdo");
-
-            const tvrUpper = tvr.filter(i => UPPER_KEY.some(k => i.town.includes(k)));
-            const tvrLower = tvr.filter(i => !UPPER_KEY.some(k => i.town.includes(k)));
-            buildGrid(tvrUpper, "#grid-up", "#q-up-p");
-            buildGrid(tvrLower, "#grid-low", "#q-low-p");
-
-            $("#loadingOverlay").fadeOut();
+        const renderTbl = (id, list) => {
+            const html = list.map(i => `<tr><td>${i.oid}</td><td>${i.town}</td><td>${i.sort}</td><td>${i.stat}</td><td>${i.curr}</td></tr>`).join('');
+            $(id).find('tbody').html(html || '<tr><td colspan="5" class="text-center">No results</td></tr>');
         };
-        reader.readAsArrayBuffer(e.target.files[0]);
-    });
 
+        const renderGrid = (id, list, badge) => {
+            let counts = {};
+            list.forEach(i => counts[i.town] = (counts[i.town] || 0) + 1);
+            let sorted = Object.keys(counts).sort((a,b) => counts[b]-counts[a]);
+            $(badge).text(list.length.toLocaleString());
+            $(id).html(sorted.map(t => `<div class="town-item ${counts[t] > 50 ? 'hot' : ''}" data-town="${t}"><span>${t}</span><b>${counts[t]}</b></div>`).join(''));
+        };
+
+        renderTbl("#t-sdo", sdoPool);
+        renderTbl("#t-tvr", tvrPool);
+        renderGrid("#grid-sdo", sdoPool, "#q-sdo-p");
+        renderGrid("#grid-up", tvrPool.filter(i => UPPER_KEY.some(k => i.town.includes(k))), "#q-up-p");
+        renderGrid("#grid-low", tvrPool.filter(i => !UPPER_KEY.some(k => i.town.includes(k))), "#q-low-p");
+
+        $("#c-ops").text(opsPool.length.toLocaleString());
+        $("#c-rec").text(recData.length.toLocaleString());
+        $("#c-ing").text(ingData.length.toLocaleString());
+        $("#c-ed").text(edData.length.toLocaleString());
+        $("#c-sdo").text(sdoPool.length.toLocaleString());
+        $("#q-sdo-t").text(sdoPool.length.toLocaleString());
+        $("#c-tvr").text(tvrPool.length.toLocaleString());
+        $("#q-tvr-t").text(tvrPool.length.toLocaleString());
+
+        $("#loadingOverlay").fadeOut();
+        $("#file").val('');
+    };
+
+    $("#file").on("change", (e) => processFiles(e.target.files));
     $("#tSearch").on("keyup", function() {
         let v = $(this).val().toUpperCase();
         $(".town-item").each(function() { $(this).toggle($(this).data('town').includes(v)); });
     });
 });
-
 </script>
 </body>
 </html>
-    
