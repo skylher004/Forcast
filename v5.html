@@ -60,17 +60,18 @@
         /* Forces text to stay on one line */
         th, td { 
             border: 1px solid black; 
-            padding: 4px 2px; 
-            padding: 4px 2px; 
+            padding: 0px 4px; 
+            padding: 0px 4px; 
             text-align: left; 
             white-space: nowrap; 
             overflow: hidden;
+            height: 15px;
         }
         
-        .header-row { background-color: #d9d9d9; font-weight: bold; text-align: center; font-size: 12pt; }
+        .header-row { background-color: #d9d9d9; font-weight: bold; text-align: center; font-size: 12pt; white-space: nowrap;width="100%"}
         .sub-header { background-color: #bfbfbf; font-weight: bold; text-align: center; font-size: 8pt; }
         .total-row { background-color: #d9d9d9; font-weight: bold; }
-        .num { text-align: right; width: 30px; font-weight: bold; }
+        .num { text-align: center; width: 30px; font-weight: bold; }
         
         /* TAL Color Coding */
         .tal1 { color: #7030a0; } .tal2 { color: #0070c0; } .tal3 { color: #ffc000; }
@@ -231,6 +232,12 @@
         <tr>
             <td>San Miguel Na Munti</td><td class="num">77</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         </tr>
+        <tr>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
         <tr class="total-row">
             <td>TOTAL</td><td class="num">291</td><td>TOTAL</td><td class="num">143</td>
             <td>TOTAL</td><td class="num">190</td><td>TOTAL</td><td class="num">239</td>
@@ -238,7 +245,7 @@
             <td>TOTAL</td><td class="num">71</td>
         </tr>
 
-        <tr><td colspan="14" style="border:none; height: 20px;"></td></tr>
+        <tr><td colspan="14" style="border:none; height: 70px;"></td></tr>
 
         <tr class="header-row"><td colspan="14">UPPER AREA (845)</td></tr>
         <tr class="sub-header">
@@ -279,6 +286,12 @@
         <tr>
             <td>Sampaloc</td><td class="num">27</td><td></td><td></td><td>Bantug Hamog (Basang Hamog)</td><td class="num">24</td>
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         </tr>
         <tr class="total-row">
             <td>TOTAL</td><td class="num">203</td><td>TOTAL</td><td class="num">206</td>
@@ -341,119 +354,4 @@ $(function () {
         const edData  = combinedRaw.filter(i => i.stat.includes("SOC_LHTransported") && i.curr.includes(STATIONS.SOC) && i.dest.includes(STATIONS.HUB));
 
         const opsPool = [...recData, ...ingData, ...edData];
-        const sdoPool = opsPool.filter(i => i.sort.includes("-SDO-"));
-        const tvrPool = opsPool.filter(i => i.sort.includes("-TVR-") && !i.sort.includes("-SDO-"));
-
-        const renderTbl = (id, list) => {
-            const html = list.map(i => `<tr><td>${i.oid}</td><td>${i.town}</td><td>${i.sort}</td><td>${i.stat}</td><td>${i.curr}</td></tr>`).join('');
-            $(id).find('tbody').html(html || '<tr><td colspan="5" class="text-center py-3">No data loaded</td></tr>');
-        };
-
-        const renderGrid = (id, list, badge) => {
-            let counts = {};
-            list.forEach(i => counts[i.town] = (counts[i.town] || 0) + 1);
-            let sorted = Object.keys(counts).sort((a,b) => counts[b]-counts[a]);
-            $(badge).text(list.length.toLocaleString());
-            $(id).html(sorted.map(t => `<div class="town-item ${counts[t] > 50 ? 'hot' : ''}" data-town="${t}"><span>${t}</span><b>${counts[t]}</b></div>`).join(''));
-        };
-
-        renderTbl("#t-sdo", sdoPool);
-        renderTbl("#t-tvr", tvrPool);
-        renderTbl("#t-rec", recData);
-        renderTbl("#t-ing", ingData);
-        renderTbl("#t-ed", edData);
-
-        renderGrid("#grid-sdo", sdoPool, "#q-sdo-p");
-        renderGrid("#grid-up", tvrPool.filter(i => UPPER_KEY.some(k => i.town.includes(k))), "#q-up-p");
-        renderGrid("#grid-low", tvrPool.filter(i => !UPPER_KEY.some(k => i.town.includes(k))), "#q-low-p");
-
-        $("#c-ops").text(opsPool.length.toLocaleString());
-        $("#c-rec").text(recData.length.toLocaleString());
-        $("#q-rec-t").text(recData.length.toLocaleString());
-        $("#c-ing").text(ingData.length.toLocaleString());
-        $("#q-ing-t").text(ingData.length.toLocaleString());
-        $("#c-ed").text(edData.length.toLocaleString());
-        $("#q-ed-t").text(edData.length.toLocaleString());
-        $("#c-sdo").text(sdoPool.length.toLocaleString());
-        $("#q-sdo-t").text(sdoPool.length.toLocaleString());
-        $("#c-tvr").text(tvrPool.length.toLocaleString());
-        $("#q-tvr-t").text(tvrPool.length.toLocaleString());
-
-        // --- TRIGGER PRINT LOGIC ---
-        runPrintLogic(opsPool);
-
-        $("#loadingOverlay").fadeOut();
-        $("#file").val('');
-    };
-
-    $("#file").on("change", (e) => processFiles(e.target.files));
-    $("#tSearch").on("keyup", function() {
-        let v = $(this).val().toUpperCase();
-        $(".town-item").each(function() { $(this).toggle($(this).data('town').includes(v)); });
-    });
-    runPrintLogic(opsPool);
-});
-
-function runPrintLogic(dataPool) {
-    // 1. Set Today's Date
-    const now = new Date();
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const dateString = `${months[now.getMonth()]} ${now.getDate()} ${now.getFullYear()}`;
-    $("#print-date").text(dateString);
-
-    const counts = {};
-    const clean = (t) => t.toString().toUpperCase()
-        .replace(/\(POB\.\)/g, '').replace(/DISTRICT/g, '')
-        .replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
-
-    // Reset counts
-    $(".print .num").text("0");
-
-    // Map Excel Data
-    dataPool.forEach(i => { 
-        const key = clean(i.town);
-        counts[key] = (counts[key] || 0) + 1; 
-    });
-
-    // Update Town Table
-    $(".print td:not(.num)").each(function() {
-        const cell = $(this);
-        const townName = clean(cell.text());
-        if (townName.length > 3 && !cell.parent().hasClass('header-row')) {
-            cell.next('.num').text(counts[townName] || 0);
-        }
-    });
-
-    // Column & Area Totals
-    let lowerTotal = 0, upperTotal = 0;
-    $(".total-row").each(function(index) {
-        const tRow = $(this);
-        let areaSum = 0;
-        for (let i = 1; i < 14; i += 2) {
-            let colSum = 0;
-            tRow.prevUntil('.sub-header').each(function() {
-                colSum += parseInt($(this).find('td').eq(i).text()) || 0;
-            });
-            tRow.find('td').eq(i).text(colSum);
-            areaSum += colSum;
-        }
-        if(index === 0) lowerTotal = areaSum; else upperTotal = areaSum;
-    });
-
-    // Update Area Headers
-    $(".header-row").each(function() {
-        if ($(this).text().includes("LOWER")) $(this).text(`LOWER AREA (${lowerTotal})`);
-        if ($(this).text().includes("UPPER")) $(this).text(`UPPER AREA (${upperTotal})`);
-    });
-
-    // Final Summary Math
-    const viaLinehaul = lowerTotal + upperTotal;
-    const riderCount = Math.round(viaLinehaul / 175);
-
-    $(".summary-table tr:eq(0) .num").text(viaLinehaul);
-    $(".summary-table tr:eq(1) .num").text(175);
-    $(".summary-table tr:eq(2) .num").text(riderCount);
-}
-</script>
-</body>
-</html>
+        con
