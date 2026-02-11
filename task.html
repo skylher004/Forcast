@@ -142,15 +142,34 @@ const defaults = {
 };
 
 $('#file').on('change', async function(e) {
+    // 1. Show loading overlay
     $('#loadingOverlay').css('display', 'flex');
-    rawData = [];
+
+    // 2. RESET DATA: Clear existing arrays and objects
+    rawData = []; 
+    driverMap = {}; 
+    
+    // 3. Reset Table UI: Clear the HTML so old data doesn't linger
+    $('#tableSPX tbody').empty();
+    $('#driverListBody').empty();
+    $('#distBody').empty();
+    $('#distFoot').empty();
+
+    // 4. Process new files
     for(let file of e.target.files) {
         const data = await extractData(file);
         rawData = rawData.concat(data);
     }
+
+    // 5. Initialize and Render
     autoAssignDrivers();
     renderAll();
+    
+    // 6. Hide loading overlay
     $('#loadingOverlay').hide();
+    
+    // 7. Optional: Clear the input value so the same file can be uploaded twice if needed
+    $(this).val('');
 });
 
 const extractData = (file) => {
