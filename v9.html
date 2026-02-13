@@ -148,6 +148,7 @@
                 <input type="text" id="tSearch" class="search-box" placeholder="Filter by town...">
                 <button class="btn btn-primary btn-sm px-3 fw-bold" onclick="$('#file').click()">UPLOAD</button>
                 <input id="file" type="file" accept=".csv, .xlsx, .xls" multiple class="d-none" />
+              <button class="btn btn-warning btn-sm px-3 fw-bold" onclick="downloadTemplate()">DOWNLOAD</button>
                 <button onclick="window.print()" class="btn btn-success fw-bold" 
         style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); padding: 10px 25px;">
     Print A4 Report
@@ -746,6 +747,40 @@ function runPrintLogic(dataPool) {
      $(".sdo .summary-table tr:eq(0) .num").text(viaLinehaul2);
     $(".sdo .summary-table tr:eq(1) .num").text(175);
     $(".sdo .summary-table tr:eq(2) .num").text(riderCount2);
+}
+ async function downloadTemplate() {
+    try {
+        const templatePath = 'TVR-DISPATCHED-AND-UNDISPATCHED TEMPLATE.xlsx';
+        
+        // 1. Generate the date string (e.g., 2-13-2026)
+        const now = new Date();
+        const dateStr = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()}`;
+        const newFileName = `TVR-DISPATCHED-AND-UNDISPATCHED ${dateStr}.xlsx`;
+
+        // 2. Fetch the file from your root folder
+        const response = await fetch(templatePath);
+        if (!response.ok) throw new Error('Template file not found in root folder');
+        
+        const blob = await response.blob();
+
+        // 3. Create a temporary download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = newFileName; // This sets the new name
+        
+        // 4. Trigger the download
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+    } catch (err) {
+        console.error(err);
+        alert("Error downloading file: Ensure 'TVR-DISPATCHED-AND-UNDISPATCHED TEMPLATE.xlsx' is in the root folder.");
+    }
 }
 </script>
 </body>
