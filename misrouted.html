@@ -220,7 +220,7 @@ $(function () {
 
                 // Updated Station Logic based on your specific rules:
                 // 1. Received: Dest "Talavera Hub" AND Current "Talavera Hub"
-                const isRec = s.includes("LMHub_Received") && 
+                const isRec = s.includes("LMHub_Received") && s.includes("LMHub_Received") &&
                               !dest.includes(cfg.STATIONS.HUB) && 
                               c.includes(cfg.STATIONS.HUB);
                 // console.log(`Row ${i}: isRec=${isRec} (Status: ${s}, Dest: ${dest}, Curr: ${c})`);
